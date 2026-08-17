@@ -417,6 +417,20 @@ def cancel_task(task_id):
         return jsonify({"success": True})
     return jsonify({"error": "Task not found"}), 404
 
+@app.route('/api/visit', methods=['POST'])
+def register_visit():
+    try:
+        # Insert a new visit record
+        supabase.table("page_views").insert({}).execute()
+        
+        # Get the total count
+        response = supabase.table("page_views").select("*", count="exact").limit(1).execute()
+        total_visits = response.count if response.count is not None else 0
+        return jsonify({"visits": total_visits})
+    except Exception as e:
+        print("Error recording visit:", e)
+        return jsonify({"visits": "---"}), 500
+
 @app.route('/api/download/<task_id>', methods=['GET'])
 def download_audio(task_id):
     if task_id not in tasks or tasks[task_id]['status'] != 'completed':

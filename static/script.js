@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // -------------------------------------------------------------
+    // Registrar Visita (Contador)
+    // -------------------------------------------------------------
+    try {
+        const visitRes = await fetch('/api/visit', { method: 'POST' });
+        if (visitRes.ok) {
+            const visitData = await visitRes.json();
+            const counterElement = document.getElementById('visit-count');
+            if (counterElement && visitData.visits) {
+                counterElement.textContent = visitData.visits;
+            }
+        }
+    } catch (e) {
+        console.error("Error al registrar visita:", e);
+    }
+
     // Supabase Auth Integration
     let supabase = null;
     let currentUser = null;

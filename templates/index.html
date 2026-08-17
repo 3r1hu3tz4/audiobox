@@ -13,6 +13,16 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.11">
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7JL3KVL8CW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-7JL3KVL8CW');
+    </script>
 </head>
 <body>
     <div class="background-orbs">
@@ -193,6 +203,13 @@
             </div>
         </div>
     </main>
+
+    <footer style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">
+        <p>AudioBox © 2026</p>
+        <p style="background: rgba(255,255,255,0.1); display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold;">
+            👀 Visitas totales: <span id="visit-count">...</span>
+        </p>
+    </footer>
 
     <!-- Modal for Audio Format Selection -->
     <div id="format-modal" class="modal hidden">
