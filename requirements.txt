@@ -1,0 +1,11 @@
+Flask==3.0.0
+Werkzeug==3.0.0
+edge-tts
+supabase
+pydub
+PyPDF2
+python-docx
+mercadopago
+python-dotenv
+imageio-ffmpeg
+gunicorn

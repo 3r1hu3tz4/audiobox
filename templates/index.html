@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioBox | Texto a Audio</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3.11">
+</head>
+<body>
+    <div class="background-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="ui-language-selector">
+        <i class="ph ph-globe"></i>
+        <select id="ui-lang-select">
+            <option value="es" selected>Español</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="zh">中文</option>
+            <option value="pt">Português</option>
+        </select>
+    </div>
+
+    <main class="app-container">
+        <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div class="logo">
+                    <i class="ph-fill ph-waveform"></i>
+                    <h1 data-i18n="title">AudioBox</h1>
+                </div>
+                <p class="subtitle" data-i18n="subtitle">Transforma palabras escritas en voz y convierte texto en audio.</p>
+            </div>
+            
+            <div id="auth-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <button id="btn-login" class="primary-btn" style="font-size: 22px; padding: 8px 16px;">Iniciar Sesión</button>
+                <div id="user-info" class="hidden" style="text-align: right;">
+                    <div style="font-size: 22px; color: var(--text-secondary); margin-bottom: 4px;">
+                        <span id="user-email"></span>
+                    </div>
+                    <div style="font-size: 22px; font-weight: 500; color: var(--primary);">
+                        Archivos gratis: <span id="user-files-count">...</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 5px; justify-content: flex-end;">
+                        <button id="btn-buy-credits" class="primary-btn" style="background: linear-gradient(135deg, #009ee3 0%, #0076a8 100%); font-size: 16px; padding: 4px 12px; border-radius: 8px;">
+                            <i class="ph-fill ph-bag"></i> Comprar 5 archivos ($89)
+                        </button>
+                        <button id="btn-logout" class="secondary-btn" style="font-size: 16px; padding: 4px 8px;">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Columna 1: Input -->
+            <div class="col-step-1">
+                <section class="input-section glass-panel" style="padding: 20px; border-radius: 16px; height: 100%; display: flex; flex-direction: column;">
+                    <h3 style="margin-bottom: 15px; font-size: 22px; color: var(--primary);">1. Ingresa tu texto o sube un documento</h3>
+                    <div class="input-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <input type="file" id="file-upload" accept=".txt,.pdf,.docx" class="hidden">
+                            <button id="btn-upload" class="icon-btn" title="Subir Documento">
+                                <i class="ph ph-upload-simple"></i>
+                                <span data-i18n="btnUpload">Subir Documento</span>
+                            </button>
+                            <button id="btn-new-file" class="icon-btn hidden" style="border-color: #38bdf8; color: #38bdf8;" title="Limpiar y subir un nuevo archivo">
+                                <i class="ph ph-file-plus"></i>
+                                <span>Subir Nuevo Archivo</span>
+                            </button>
+                            <button id="btn-download-txt" class="icon-btn hidden" style="border-color: var(--primary); color: var(--primary);" title="Descargar archivo TXT formateado">
+                                <i class="ph ph-download-simple"></i>
+                                <span>Descargar .TXT</span>
+                            </button>
+                            <button id="btn-format-text" class="icon-btn" title="Formatear texto actual con tabulaciones y saltos">
+                                <i class="ph ph-text-align-left"></i>
+                                <span>Formatear Texto</span>
+                            </button>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-secondary);">Capacidad: 16 MB</span>
+                    </div>
+                    <div id="upload-progress-container" class="hidden" style="margin-top: 10px; margin-bottom: 10px; font-size: 14px; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span id="upload-progress-text" style="color: var(--text-secondary);">Subiendo... 0%</span>
+                            <span id="upload-error-text" class="hidden" style="color: var(--danger); font-size: 13px;"></span>
+                        </div>
+                        <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px;">
+                            <div id="upload-progress-bar" style="width: 0%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.2s;"></div>
+                        </div>
+                    </div>
+                    <textarea id="text-input" data-i18n-placeholder="placeholder" placeholder="Escribe o pega tu texto aquí para convertirlo en voz..." style="height: 100%; min-height: 300px; flex-grow: 1; margin-bottom: 10px;"></textarea>
+                    <div class="character-count" style="margin-top: auto;"><span id="char-count">0</span> <span data-i18n="chars">caracteres</span></div>
+                </section>
+            </div>
+
+            <!-- Columna 2: Opciones -->
+            <div class="col-step-2">
+                <section class="controls-section glass-panel" style="padding: 20px; border-radius: 16px; height: 100%;">
+                    <h3 style="margin-bottom: 15px; font-size: 22px; color: var(--primary);">2. Elige la voz y opciones</h3>
+                    <div class="control-group">
+                        <label for="server-voice-select">Voz de Alta Calidad (Para Descargar)</label>
+                        <div class="select-wrapper">
+                            <select id="server-voice-select">
+                                <option value="es" selected>Español (Dalia) 🇪🇸</option>
+                                <option value="en">Inglés (Aria) 🇺🇸</option>
+                                <option value="fr">Francés (Denise) 🇫🇷</option>
+                                <option value="it">Italiano (Elsa) 🇮🇹</option>
+                                <option value="pt">Portugués (Francisca) 🇵🇹</option>
+                                <option value="ru">Ruso (Svetlana) 🇷🇺</option>
+                                <option value="zh">Chino (Xiaoxiao) 🇨🇳</option>
+                                <option value="ko">Coreano (SunHi) 🇰🇷</option>
+                            </select>
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="voice-select">Voz Local (Para Escuchar en Navegador)</label>
+                        <div class="select-wrapper">
+                            <select id="voice-select">
+                                <option value="">Cargando voces locales...</option>
+                            </select>
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                    </div>
+
+                    <div class="sliders-group">
+                        <div class="slider-container">
+                            <div class="slider-header">
+                                <label for="rate-slider" data-i18n="speedLabel">Velocidad</label>
+                                <span class="slider-value" id="rate-value">1.0x</span>
+                            </div>
+                            <input type="range" id="rate-slider" min="0.5" max="2" value="1" step="0.1">
+                        </div>
+
+                        <div class="slider-container">
+                            <div class="slider-header">
+                                <label for="pitch-slider" data-i18n="pitchLabel">Tono</label>
+                                <span class="slider-value" id="pitch-value">1.0</span>
+                            </div>
+                            <input type="range" id="pitch-slider" min="0" max="2" value="1" step="0.1">
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Columna 3: Acción -->
+            <div class="col-step-3">
+                <section class="action-section glass-panel" style="padding: 20px; border-radius: 16px; height: 100%;">
+                    <h3 style="margin-bottom: 15px; font-size: 22px; color: var(--primary);">3. Reproduce o Genera tu Audio</h3>
+                    <div class="action-buttons" style="display: flex; flex-direction: column; gap: 15px;">
+                        <button id="btn-play" class="primary-btn">
+                            <i class="ph-fill ph-play"></i>
+                            <span data-i18n="btnSpeak">Hablar (Local)</span>
+                        </button>
+                        <div class="generate-group" style="display: flex; flex: 1; gap: 8px;">
+                            <button id="btn-generate-audio" class="primary-btn record-btn" style="flex: 1;">
+                                <i class="ph-fill ph-file-audio"></i>
+                                <span data-i18n="btnGenerate">Generar Audio</span>
+                            </button>
+                            <button id="btn-cancel-audio" class="secondary-btn hidden" style="flex: 1; border-color: var(--danger); color: var(--danger);">
+                                <i class="ph-fill ph-x-circle"></i>
+                                <span data-i18n="btnCancel">Cancelar</span>
+                            </button>
+                        </div>
+                        <button id="btn-pause" class="secondary-btn hidden">
+                            <i class="ph-fill ph-pause"></i>
+                            <span data-i18n="btnPause">Pausar</span>
+                        </button>
+                        <button id="btn-resume" class="secondary-btn hidden">
+                            <i class="ph-fill ph-play"></i>
+                            <span data-i18n="btnResume">Reanudar</span>
+                        </button>
+                        <button id="btn-stop" class="danger-btn hidden">
+                            <i class="ph-fill ph-stop"></i>
+                            <span data-i18n="btnStop">Detener</span>
+                        </button>
+                    </div>
+                </section>
+                <div class="status-indicator">
+                    <div class="pulse-ring"></div>
+                    <span id="status-text" data-i18n="statusReady">Listo</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Audio Format Selection -->
+    <div id="format-modal" class="modal hidden">
+        <div class="modal-content glass-panel" style="padding: 25px; text-align: center; max-width: 350px; width: 90%;">
+            <h3 style="margin-bottom: 20px; font-size: 22px; color: var(--text-primary);">Selecciona el formato de audio</h3>
+            <div class="format-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="format-btn" data-format="mp3">MP3 <br><small>(Universal)</small></button>
+                <button class="format-btn" data-format="wav">WAV <br><small>(Alta Calidad)</small></button>
+                <button class="format-btn" data-format="ogg">OGG <br><small>(Optimizado)</small></button>
+                <button class="format-btn" data-format="aac">AAC <br><small>(Móviles)</small></button>
+            </div>
+            <button id="btn-close-modal" class="secondary-btn" style="margin-top: 20px; width: 100%;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal for Authentication -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content glass-panel" style="padding: 25px; text-align: center; max-width: 350px; width: 90%;">
+            <h3 id="auth-title" style="margin-bottom: 20px; font-size: 22px; color: var(--text-primary);">Iniciar Sesión</h3>
+            <form id="auth-form" style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="email" id="auth-email" placeholder="Correo electrónico" required style="padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-primary); color: var(--text-primary);">
+                <input type="password" id="auth-password" placeholder="Contraseña" required style="padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-primary); color: var(--text-primary);">
+                <button type="submit" id="btn-auth-submit" class="primary-btn" style="margin-top: 10px; width: 100%;">Entrar</button>
+            </form>
+            <div id="auth-error" class="hidden" style="color: var(--danger); font-size: 13px; margin-top: 10px;"></div>
+            <div style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);">
+                <span id="auth-toggle-text">¿No tienes cuenta?</span> 
+                <a href="#" id="auth-toggle-link" style="color: var(--primary); text-decoration: underline;">Regístrate</a>
+            </div>
+            <button id="btn-close-auth-modal" class="secondary-btn" style="margin-top: 20px; width: 100%;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Out of Credits Modal -->
+    <div id="credits-modal" class="modal hidden">
+        <div class="auth-box" style="text-align: center;">
+            <div style="font-size: 48px; color: #009ee3; margin-bottom: 10px;">
+                <i class="ph-fill ph-shopping-cart"></i>
+            </div>
+            <h2>¡Te quedaste sin archivos!</h2>
+            <p style="color: var(--text-secondary); margin: 15px 0 25px 0;">
+                Has agotado tus conversiones gratuitas. Adquiere un paquete de 5 archivos adicionales para seguir usando AudioBox.
+            </p>
+            <button id="btn-modal-buy" class="primary-btn" style="width: 100%; font-size: 18px; padding: 15px; background: linear-gradient(135deg, #009ee3 0%, #0076a8 100%); margin-bottom: 15px;">
+                Comprar 5 archivos por $89 MXN
+            </button>
+            <button id="credits-close" class="secondary-btn" style="width: 100%;">Cerrar</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}?v=3.3"></script>
+</body>
+</html>
