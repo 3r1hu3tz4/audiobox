@@ -23,10 +23,12 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # Llave pública (anon key)
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") # Llave maestra (bypasses RLS)
+
+# Si existe la llave maestra, el backend la usa para tener permisos de Administrador
+admin_key = SUPABASE_SERVICE_KEY if SUPABASE_SERVICE_KEY else SUPABASE_KEY
+supabase: Client = create_client(SUPABASE_URL, admin_key) if SUPABASE_URL and admin_key else None
 
 MP_ACCESS_TOKEN = os.environ.get("MERCADOPAGO_ACCESS_TOKEN")
 mp_sdk = mercadopago.SDK(MP_ACCESS_TOKEN) if MP_ACCESS_TOKEN else None
